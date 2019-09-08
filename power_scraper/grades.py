@@ -3,6 +3,7 @@ import os
 
 from selenium.webdriver import Chrome
 
+from encrypt import encrypt, decrypt
 
 HOME = '/'.join(abspath(dirname(__file__)).split('/')[:3])
 
@@ -22,9 +23,9 @@ if __name__ == '__main__':
         print()
         user_secrets.append(input('District (url to sign in is powerschool.THIS.org): '))
         with open(f'{HOME}/.user-secrets', 'w+') as f:
-            f.write('\n'.join(user_secrets))
+            f.write(encrypt('\n'.join(user_secrets)))
     
     with open(f'{HOME}/.user-secrets', 'r') as f:
-        user_secrets = f.read().split('\n')
+        user_secrets = decrypt(f.read().split('\n'))
 
     main(*user_secrets)
