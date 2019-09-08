@@ -2,16 +2,21 @@ import os
 from os.path import abspath, dirname, isfile
 
 from cryptography.fernet import Fernet
-from selenium.webdriver import Chrome
+from selenium.webdriver import Chrome, ChromeOptions
 
 
-HOME = '/'.join(abspath(dirname(__file__)).split('/')[:3])
+CWD = abspath(dirname(__file__))
+HOME = '/'.join(CWD.split('/')[:3])
 
 
 def main(username, password, district):
     """Scrapes powerschool and gives all grades"""
 
-    print(username, password, district)
+    options = ChromeOptions()
+    options.add_argument('headless')
+    driver = Chrome(f'{CWD}/chromedriver', options=options)
+
+    driver.get(f'https://powerschool.{district}.org/public/')
 
 
 if __name__ == '__main__':
