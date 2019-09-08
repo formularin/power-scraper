@@ -2,3 +2,4 @@ venv
 .DS_Store
 .vscode
 test.py
+power_scraper/__pycache__
