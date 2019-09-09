@@ -1,5 +1,5 @@
-import os
 from os.path import abspath, dirname, isfile
+import os
 
 from cryptography.fernet import Fernet
 from selenium.webdriver import Chrome, ChromeOptions
@@ -15,6 +15,7 @@ HOME = '/'.join(CWD.split('/')[:3])
 
 def wait_for_element(driver, selector, method):
     """Returns element after waiting for page load"""
+
     try:
         wait = WebDriverWait(driver, 10)
         wait.until(
@@ -26,8 +27,52 @@ def wait_for_element(driver, selector, method):
     return element
 
 
-def main(username, password, district):
-    """Scrapes powerschool and gives all grades"""
+def main(username, password, url, classes, grades, 
+         name=True, room=True, teacher=True, teacher_email=True):
+    """Scrapes powerschool and returns grades and other info according to input
+    
+    Parameters
+    ----------
+    username : str
+        Powerschool username (required to sign in to access grades).
+        Either specified on script run or stored in file.
+    
+    password : str
+        Powerschool password (required to sign in to access grades),
+        Either specified on script run or stored in file.
+    
+    url : str
+        URL to sign in page (ex. powerschool.niskyschools.org)
+    
+    classes : list of str or "ALL"
+        Names of classes to return info about. "ALL" signifies all classes.
+    
+    grades : list of str or "ALL"
+        Names of grades to return for each class in `classes`. (ex. "Q1")
+        "ALL" signifies all grades.
+    
+    name : bool, optional
+        Whether or not to return the name of each class in `classes`
+        (Default value is True)
+    
+    room : bool, optional
+        Whether or not to return the room number of each class in `classes`
+        (Default value is True)
+    
+    teacher : bool, optional
+        Whether or not to return the name of the teacher of each class in `classes`
+        (Default value is True)
+    
+    teacher_email : bool optional
+        Whether or not to return the email of the teacher of each class in `classes`
+        (Default value is True)
+
+    Returns
+    -------
+    list of dict with keys and values str
+        Each dict represents a class, with each key being either a grade (ex. "Q1"),
+        or an info category (ex. "TEACHER"), and each value being a string corresponding to that key.
+    """
 
     classes = []  # contains dicts representing each class
 
@@ -35,10 +80,10 @@ def main(username, password, district):
     options.add_argument('headless')
     driver = Chrome(f'{CWD}/chromedriver', options=options)
 
-    driver.get(f'https://powerschool.{district}.org/public/')
+    driver.get(url)
 
     # sign in
-    username_input = driver.find_element_by_id("fieldAccount")
+    username_input = wait_for_element(driver, "fieldAccount", "ID")
     username_input.send_keys(username)
     username_input.send_keys(Keys.TAB)
 
@@ -79,7 +124,7 @@ if __name__ == '__main__':
         user_secrets.append(input('Password: '))
         os.system("stty echo")
         print()
-        user_secrets.append(input('District (url to sign in is powerschool.THIS.org): '))
+        user_secrets.append(input('URL to sign in page: '))
 
         # write encrypted message to file
         bytes_info = '\n'.join(user_secrets).encode()
