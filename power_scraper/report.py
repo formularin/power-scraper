@@ -20,7 +20,7 @@ CWD = abspath(dirname(__file__))
 HOME = '/'.join(CWD.split('/')[:3])
 
 
-def wait_for_element(driver, selector, method):
+def wait_for_element(driver, selector, method, plural=False):
     """Returns element after waiting for page load"""
 
     try:
@@ -29,7 +29,10 @@ def wait_for_element(driver, selector, method):
             eval(f'EC.presence_of_element_located((By.{method}, "{selector}"))')
         )
     finally:
-        element = eval(f'driver.find_element_by_{method.lower()}("{selector}")')
+        if plural:
+            element = eval(f'driver.find_elements_by_{method.lower()}("{selector}")')
+        else:
+            element = eval(f'driver.find_element_by_{method.lower()}("{selector}")')
 
     return element
 
@@ -76,11 +79,11 @@ def main(username, password, url, classes, grades,
         Each dict represents a class, with each key being either a grade (ex. "Q1"),
         or an info category (ex. "TEACHER"), and each value being a string corresponding to that key.
     """
-
-    classes = []  # contains dicts representing each class
+    
+    class_dicts = []  # contains dicts representing each class
 
     options = ChromeOptions()
-    options.add_argument('headless')
+    # options.add_argument('headless')
     driver = Chrome(f'{CWD}/chromedriver', options=options)
 
     driver.get(url)
@@ -94,19 +97,31 @@ def main(username, password, url, classes, grades,
     password_input.send_keys(password)
     password_input.send_keys(Keys.ENTER)
 
-    class_rows = driver.find_elements_by_xpath('//tr[@class="center"]')[:-1]
+    class_rows = wait_for_element(driver, "//tr[@class='center']", "XPATH", plural=True)[:-1]
+
+    # get column indices of grades
+    grades_row = driver.find_element_by_xpath("//tr[@class='center th2'][1]")
+    grade_headers = grades_row.find_elements_by_xpath('.//*')[4:-2]
+    grade_header_texts = [th for th in grade_headers if th.text in grades]
+    grade_column_indices = [grade_headers.index(th) for th in grade_header_texts]
+    
     for row in class_rows:
-        
+
         class_info = {}
 
         # meta info
         meta_info_td = row.find_element_by_xpath('.//td[@align="left"]')
         meta_info = meta_info_td.text
+
+        class_name = meta_info.split('\n')[0][:-1]
+        if class_name not in classes:
+            continue
+
         if teacher_email or teacher:
             email_link = meta_info_td.find_element_by_xpath('.//a[2]')
         
         if name:
-            class_info["NAME"] = meta_info.split('\n')[0][:-1]
+            class_info["NAME"] = class_name
         if room:
             class_info["ROOM"] = meta_info.split('Rm: ')[-1]
         if teacher:
@@ -114,9 +129,17 @@ def main(username, password, url, classes, grades,
         if teacher_email:
             class_info["TEACHER_EMAIL"] = email_link.get_attribute('href')[7:]
 
-        classes.append(class_info)
+        # grades
+        grade_columns = [td for td in row.find_elements_by_xpath(".//td")
+                            if len(td.find_elements_by_xpath(".//a")) == 1]
+        scores = [grade_columns[i].find_element_by_xpath('.//a').text
+                                for i in grade_column_indices]
+        for grade, score in zip(grades, scores):
+            class_info[grade] = score
 
-    return classes
+        class_dicts.append(class_info)
+
+    return class_dicts
 
 
 if __name__ == '__main__':
@@ -176,7 +199,7 @@ if __name__ == '__main__':
         if '--' in arg:
             kwargs[arg[2:]] = True
         else:
-            kwargs[lists[arg_num]].append(arg.split(';'))
+            kwargs[lists[arg_num]] = arg.split(';')
             arg_num += 1
 
     print(main(**kwargs))
