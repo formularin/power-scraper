@@ -1,5 +1,12 @@
+"""
+Usage:
+python report.py [--name|--room|--teacher|--teacher-email] <classes> <grades>
+"""
+
+
 from os.path import abspath, dirname, isfile
 import os
+import sys
 
 from cryptography.fernet import Fernet
 from selenium.webdriver import Chrome, ChromeOptions
@@ -28,7 +35,7 @@ def wait_for_element(driver, selector, method):
 
 
 def main(username, password, url, classes, grades, 
-         name=True, room=True, teacher=True, teacher_email=True):
+         name, room, teacher, teacher_email):
     """Scrapes powerschool and returns grades and other info according to input
     
     Parameters
@@ -53,19 +60,15 @@ def main(username, password, url, classes, grades,
     
     name : bool, optional
         Whether or not to return the name of each class in `classes`
-        (Default value is True)
     
     room : bool, optional
         Whether or not to return the room number of each class in `classes`
-        (Default value is True)
     
     teacher : bool, optional
         Whether or not to return the name of the teacher of each class in `classes`
-        (Default value is True)
     
     teacher_email : bool optional
         Whether or not to return the email of the teacher of each class in `classes`
-        (Default value is True)
 
     Returns
     -------
@@ -152,6 +155,28 @@ if __name__ == '__main__':
     with open(f'{HOME}/.user-secrets', 'rb') as f:
         encrypted = f.read()
 
-    user_secrets = fernet.decrypt(encrypted).decode('utf-8').split('\n')
+    username, password, url = fernet.decrypt(encrypted).decode('utf-8').split('\n')
 
-    main(*user_secrets)
+    # argument handling for cli to function input
+    kwargs = {
+        "name": False,
+        "room": False,
+        "teacher": False,
+        "teacher_email": False,
+        "username": username,
+        "password": password,
+        "url": url,
+        "classes": [],
+        "grades": [],
+    }
+    arg_num = 0
+    lists = ["classes", "grades"]
+
+    for arg in sys.argv[1:]:
+        if '--' in arg:
+            kwargs[arg[2:]] = True
+        else:
+            kwargs[lists[arg_num]].append(arg.split(';'))
+            arg_num += 1
+
+    print(main(**kwargs))
