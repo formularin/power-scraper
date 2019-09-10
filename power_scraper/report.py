@@ -1,9 +1,3 @@
-"""
-Usage:
-python report.py [--name|--room|--teacher|--teacher-email] <classes> <grades>
-"""
-
-
 from collections import OrderedDict
 from os.path import abspath, dirname, isfile
 import os
