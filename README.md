@@ -16,7 +16,7 @@ A command-line application that allows you to check your powerschool grades from
 
 **After first stable release**
 
-```power-scraper <classes> <grades> [--name|--room|--teacher|--teacher-email]```
+```power-scraper <classes> <grades> [--name|--room|--teacher|--teacher-email] [-h]```
 
 # OS Compatability and Requirements
 

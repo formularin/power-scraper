@@ -135,6 +135,11 @@ def main(username, password, url, classes,
 
 if __name__ == '__main__':
 
+    # helpscreen condition
+    if '-h' in sys.argv[1:]:
+        print("Usage:\npower-scraper <classes> <grades> [--name|--room|--teacher|--teacher-email] [-h]")
+        sys.exit()
+
     if not isfile(f'{HOME}/.user-secrets'):
         
         # generate encryption key
