@@ -93,19 +93,27 @@ def main(username, password, url, classes, grades,
 
     class_rows = driver.find_elements_by_xpath('//tr[@class="center"]')[:-1]
     for row in class_rows:
-
+        
         class_info = {}
 
+        # meta info
         meta_info_td = row.find_element_by_xpath('.//td[@align="left"]')
         meta_info = meta_info_td.text
-        email_link = meta_info_td.find_element_by_xpath('.//a[2]')
+        if teacher_email or teacher:
+            email_link = meta_info_td.find_element_by_xpath('.//a[2]')
         
-        class_info["NAME"] = meta_info.split('\n')[0][:-1]
-        class_info["ROOM"] = meta_info.split('Rm: ')[-1]
-        class_info["TEACHER"] = email_link.text[6:-1]
-        class_info["TEACHER_EMAIL"] = email_link.get_attribute('href')[7:]
+        if name:
+            class_info["NAME"] = meta_info.split('\n')[0][:-1]
+        if room:
+            class_info["ROOM"] = meta_info.split('Rm: ')[-1]
+        if teacher:
+            class_info["TEACHER"] = email_link.text[6:-1]
+        if teacher_email:
+            class_info["TEACHER_EMAIL"] = email_link.get_attribute('href')[7:]
 
         classes.append(class_info)
+
+    return classes
 
 
 if __name__ == '__main__':
