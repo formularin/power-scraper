@@ -4,6 +4,7 @@ python report.py [--name|--room|--teacher|--teacher-email] <classes> <grades>
 """
 
 
+from collections import OrderedDict
 from os.path import abspath, dirname, isfile
 import os
 import sys
@@ -83,7 +84,7 @@ def main(username, password, url, classes, grades,
     class_dicts = []  # contains dicts representing each class
 
     options = ChromeOptions()
-    # options.add_argument('headless')
+    options.add_argument('headless')
     driver = Chrome(f'{CWD}/chromedriver', options=options)
 
     driver.get(url)
@@ -104,10 +105,10 @@ def main(username, password, url, classes, grades,
     grade_headers = grades_row.find_elements_by_xpath('.//*')[4:-2]
     grade_header_texts = [th for th in grade_headers if th.text in grades]
     grade_column_indices = [grade_headers.index(th) for th in grade_header_texts]
-    
+
     for row in class_rows:
 
-        class_info = {}
+        class_info = OrderedDict()
 
         # meta info
         meta_info_td = row.find_element_by_xpath('.//td[@align="left"]')
@@ -121,13 +122,13 @@ def main(username, password, url, classes, grades,
             email_link = meta_info_td.find_element_by_xpath('.//a[2]')
         
         if name:
-            class_info["NAME"] = class_name
+            class_info["Name"] = class_name
         if room:
-            class_info["ROOM"] = meta_info.split('Rm: ')[-1]
+            class_info["Room"] = meta_info.split('Rm: ')[-1]
         if teacher:
-            class_info["TEACHER"] = email_link.text[6:-1]
+            class_info["Teacher"] = email_link.text[6:-1]
         if teacher_email:
-            class_info["TEACHER_EMAIL"] = email_link.get_attribute('href')[7:]
+            class_info["Teacher-email"] = email_link.get_attribute('href')[7:]
 
         # grades
         grade_columns = [td for td in row.find_elements_by_xpath(".//td")
@@ -181,7 +182,7 @@ if __name__ == '__main__':
     username, password, url = fernet.decrypt(encrypted).decode('utf-8').split('\n')
 
     # argument handling for cli to function input
-    kwargs = {
+    old_kwargs = {
         "name": False,
         "room": False,
         "teacher": False,
@@ -192,6 +193,7 @@ if __name__ == '__main__':
         "classes": [],
         "grades": [],
     }
+    kwargs = OrderedDict(old_kwargs.items())
     arg_num = 0
     lists = ["classes", "grades"]
 
@@ -202,4 +204,38 @@ if __name__ == '__main__':
             kwargs[lists[arg_num]] = arg.split(';')
             arg_num += 1
 
-    print(main(**kwargs))
+    classes = main(**kwargs)
+
+    output_rows = []
+
+    # get headers row
+    headers = []
+    items = [i for i in kwargs.items()
+             if "username" not in i
+             and "password" not in i
+             and "url" not in i
+             and "classes" not in i]
+    for k, v in items:
+        if not v:
+            continue
+        if k == "grades":
+            for grade in v:
+                headers.append(grade)
+        else:
+            headers.append(k)
+    
+    formats = ['{:20}' for _ in range(len(headers))]
+    headers_row = ' '.join(formats).format(*headers)
+    output_rows.append(headers_row)
+
+    # get class rows
+    for course in classes:
+        output_rows.append(' '.join(formats).format(*list(course.values())))
+
+    # get divider row
+    n_dashes = (max([len(i) for i in output_rows]) - 20 + 
+                max([len(list(course.values())[-1]) for course in classes]))
+    divider_row = ''.join(['-' for _ in range(n_dashes)])
+    output_rows.insert(1, divider_row)
+
+    print('\n'.join(output_rows))
