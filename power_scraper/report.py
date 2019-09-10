@@ -38,8 +38,8 @@ def wait_for_element(driver, selector, method, plural=False):
     return element
 
 
-def main(username, password, url, classes, grades, 
-         name, room, teacher, teacher_email):
+def main(username, password, url, classes, 
+         grades, room, teacher, teacher_email):
     """Scrapes powerschool and returns grades and other info according to input
     
     Parameters
@@ -61,9 +61,6 @@ def main(username, password, url, classes, grades,
     grades : list of str or "ALL"
         Names of grades to return for each class in `classes`. (ex. "Q1")
         "ALL" signifies all grades.
-    
-    name : bool, optional
-        Whether or not to return the name of each class in `classes`
     
     room : bool, optional
         Whether or not to return the room number of each class in `classes`
@@ -121,8 +118,7 @@ def main(username, password, url, classes, grades,
         if teacher_email or teacher:
             email_link = meta_info_td.find_element_by_xpath('.//a[2]')
         
-        if name:
-            class_info["Name"] = class_name
+        class_info["Name"] = class_name
         if room:
             class_info["Room"] = meta_info.split('Rm: ')[-1]
         if teacher:
@@ -183,7 +179,6 @@ if __name__ == '__main__':
 
     # argument handling for cli to function input
     old_kwargs = {
-        "name": False,
         "room": False,
         "teacher": False,
         "teacher_email": False,
